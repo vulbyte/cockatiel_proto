@@ -1,0 +1,162 @@
+// only 32bit numbers are allowed
+syntax = "proto3";
+package cockatiel_protobuf.v1;
+
+/* SUB DATA STRUCTURES (to be consumed by another data struct) */
+
+// POST-AUTH
+message AuthNew {/*is given from a new jwt,*/
+    string new_auth = 1; /*the new token*/
+  }
+message AuthVerify {/*when asked to verify auth, will return this, pull id from header. if the module receives this it will be expected to provide it to the engine (value doesn't matter)*/
+    string cur_auth = 1; /*the current token*/
+  }
+message Ban {
+    string commender_uuid7 = 1; /*user id of who gave the commendment*/
+    string commendee_uuid7 = 2; /*user id of who receives the commendment*/
+    bool unbanned = 3; /*if the ban has been revoked*/
+    string reason = 4; /*why the ban exists*/
+    string raw_message = 5; /*message connected to why the user was banned*/
+    repeated string appeals = 6; /*if the user wishes the ban to be undone, why*/
+  }
+message Command {/* used to communicate commands with sub-Flag's to Cockatiel_server*/
+    string command_name = 1; /*ie: text to speach*/
+    string command_flag = 2; /*ie: tts (do not include flag)*/
+    string command_description = 3; /*take a guess*/
+    repeated Flag command_flags = 4; /*array of Flag's*/
+  }
+message Commands {/**/
+    repeated Command commands = 1; /*array of commands for the purpose of communicating module capibilites*/
+  }
+message Commendment {
+    string commender_uuid7 = 1; /*user id of who gave the commendment*/
+    string commendee_uuid7 = 2; /*user id of who receives the commendment*/
+    string raw_message = 3; /*message connected to why the user was commended*/
+  }
+message ConnectionRequest {/*used on first request to request connection*/
+    int32 pin = 1; /*pin must match one from config, if not connection is refused*/
+    string process_position = 2; /*input:cockatiel will not use it for processing, and will expect MessagePreProcess messages. 
+                                   options:
+                                   preprocess: connections MessageRaw, 
+                                   inprocess:returns processedMessage(inflight), 
+                                   postprocess: returns processedMessage (finished processing),
+                                   connection: bidirectional communication, used to receivee ProcessMessage event and 
+                                  */
+    int32 priority = 3; /*lower number = higher prioritoty, already connected modules get priority*/
+    string module_instance_uuid7 = 4; /*incase multiple modules connect with the same name, this is so the module can still be unique. if is blank will blindly accept whatever from the engine. uuid7 so that way the module cna be timestamped for whenever it was init'd*/
+  }
+message ConnectionRequestReturn {/*return from ConnectionRequest to module*/
+    int32 new_port = 1; /*if value is 0000, then that means connection rejected*/
+    string module_instance_uuid7 = 2; /*this is a return if the module_instance_id clashes with another id. if the program attempts to communicate without this new id then cockatiel will reject the data from the module. if is empty or = 0 then the module can assume the suggested module_instance_id was fine and accepted*/
+  }
+message Err {
+    string log = 1; /*for the message like "could not parse string" ala: err.msg*/
+    string blob = 2; /*if there was an error with data, this can be used to pass the failed data (ie, failed to parse json: <json in question>)*/
+    string trace = 3; /*whatever the language spits out as the generic stack ala: err.trace*/
+  }
+message Flag {/*used to communicate flags within the Command flag ie the "-h"*/
+    string flag_name = 1; /*ie: help*/
+    string flag_description = 2; /*take a guess*/
+    string limiting_type = 3; /*any, options, or range */
+    float min_val = 4; /*if set to range*/
+    float max_val = 5; /*if set to range*/
+    repeated string options = 6; /*if set to options*/
+  }
+message Log {
+    string log = 1; /*generic message*/
+    string blob = 2; /*if there's a some sorta media/blob/whatever what the module considers to be important to store, ie maybe a new config for archival reasons.*/
+  }
+// Stage 2: Intermediate state as filters and transforms act on the message sequentially
+message MessageInProcess {
+    string platform = 1;
+    string raw_data = 2; /* due to platform vagueness, raw key-data pairs or json string */
+    string user_uuid7 = 3; /* user id + timestamp of their first appearance */
+    string raw_message = 4; /* raw json for debugging */
+    string processed_message = 5; /* message modified AFTER transforms */
+    bool abandon_message = 6; /*if this flag is true, cockatiel will ignore further processing steps and simply archive the message (good for if user used banned language or should be absorbed for other reasons)*/
+    Command command = 7;
+    string user_data = 8;
+  }
+// Stage 1: Raw payload coming in from an external platform adapter
+message MessagePreProcess {
+    string platform = 1;
+    string raw_data = 2; /* due to platform vagueness, raw key-data pairs or json string */
+    string raw_message = 3; /*message from the user in the raw with no transforamtions, parsing, or anything at all.*/
+    string user_uuid7 = 4; /*used in conjunction with the userDB, allowing account consolodation and across platform consolodation*/
+    Command command = 5;
+    string user_data = 6; /* this will generally be blank, but if a command is detected as needing user data it will append user data (ie, if a command trigger is found)*/
+  }
+// Stage 3: Fully finalized message ready for database commit (timeline events) and broadcasting
+message MessagePostProcess {
+    string platform = 1;
+    string raw_data = 2; /* due to platform vagueness, raw key-data pairs or json string */
+    string user_uuid7 = 3;
+    string raw_message = 4;
+    string processed_message = 5;
+    Command command = 6;
+    string user_data = 7;
+  }
+message SendToPlatfroms { /*if received and module has perms, used to tell the engine to send a message to all chats*/
+    string msg = 1;
+    string level = 2; /*self, others, all*/
+    string module_uuid7 = 3; /*if received by engine, then the engine will overwrite whatever value this is, and assign the modules uuid7 to this value*/
+    string pid = 4; /*as above*/
+  }
+//general communication
+message Shutdown {
+      string reason = 1;
+  }
+message TimelineEvent {
+    string c = 1;  // command flag attempted (e.g., "!tts")
+    bytes d = 2;   // data blob (e.g., mp3 file for tts)
+    string e = 3;  // error message if any
+    string f = 4;  // flags (if any)
+    string i = 5;  // timeline id# (uuid7 format, includes timecode) THIS IS THE PRIME KEY
+    string o = 6;  // origin of message (system, youtube, twitch, etc)
+    string p = 7;  // processed message
+    string r = 8;  // raw message
+    string s = 9;  // stream origin
+    string t = 10; // message type (log, warning, error, system, usermessage, etc)
+    string u = 11; // user_id of who triggered the event
+    int32 v = 12;  // version
+  }
+message UserStylingTemplate{/*TO IMPL*/}
+message UserData {/*used for transfering user data*/
+    string uuid = 1;   /**/
+    string username = 2; /**/
+    //repeated String youtube_channels = 2; /**/
+    //repeated String twitch_channels = 3; /**/
+    bool isSponsor = 3; /*if the user has EVER donated to the channel*/
+    bool isModerator = 4; /**/
+    bool isAdmin = 5; /**/
+    bool isOwner = 6; /**/
+    repeated Ban bans = 7; /**/
+    repeated Commendment commendments = 8; /**/
+    UserStylingTemplate styling = 9; /*the css for the user styling*/
+  }
+
+
+// MESSAGE SHAPE
+message Container { /* general template for communicating messages */
+  int32 version = 1; /* version for disbatching */
+  string auth_token = 3; /* JWT for auth */
+  string module_name = 4; /* used for displaying to user and for internal resource mgmt */
+  string module_instance_uuid7 = 5; /*if is a connection request, will ignore this*/
+  
+  oneof payload {
+    ConnectionRequest connection_request = 7;
+    ConnectionRequestReturn connection_request_return = 8;
+    AuthVerify auth_verify = 9;
+    AuthNew auth_new = 10;
+    Command command_payload = 11;
+    Commands commands_payload = 12;
+    MessagePreProcess message_pre_process = 13;
+    MessageInProcess message_in_process = 14;
+    MessagePostProcess message_post_process = 15;
+    TimelineEvent timeline_event = 16;
+    UserData user_data = 17;
+    Shutdown shutdown = 18;
+    Log log = 19;
+    Err err = 20;
+  }
+}
