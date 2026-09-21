@@ -1,0 +1,17 @@
+[workspace]
+
+[package]
+name = "cockatiel-proto"
+version = "0.1.0"
+edition = "2021"
+description = "Cockatiel protobuf protocol — the single source of truth for the wire types shared by the engine, the client, and every module."
+license = "GPL-2.0"
+
+[lib]
+name = "cockatiel_proto"
+
+[dependencies]
+prost = "0.14"
+
+[build-dependencies]
+prost-build = "0.13"
