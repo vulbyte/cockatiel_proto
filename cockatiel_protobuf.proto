@@ -83,6 +83,9 @@ message Flag {
   float min_val = 4;
   float max_val = 5;
   repeated string options = 6;
+  /* Parsed value for this flag on a given command invocation (e.g. `-p 2`
+   * becomes value "2"; the engine strips the leading `-`). */
+  string value = 7;
 }
 
 message Command {
@@ -104,6 +107,11 @@ message Commands {
    * authed: add commands to the help registry
    */
   repeated Command commands = 1;
+  /* When true, a message that uses one of this module's flags with an
+   * UNREGISTERED command triggers the engine's apology reply to that chat
+   * ("sorry <user>, that command isn't valid, try '!help'"). An EMPTY
+   * `commands` list makes this module a catch-all (receives every message). */
+  bool alert_on_unknown_command = 2;
 }
 
 message Commendation {
