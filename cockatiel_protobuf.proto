@@ -237,6 +237,9 @@ message SendToPlatforms {
   string actor_platform = 6; // identity of the human who triggered the send
   string actor_handle = 7;   // platform handle of that actor
   string actor_uuid7 = 8;    // user DB uuid7 of that actor (when known)
+  /* Optional: target a single channel instead of every channel the adapter
+   * monitors (used for !help / invalid-command replies). */
+  string channel_id = 9;
 }
 
 // ==========================================
@@ -391,6 +394,10 @@ message ChatMessage {
   string user_uuid7 = 4;
   Command command = 5;
   UserData user_data = 6; 
+  /* The source channel this message came from (adapter-scoped: the Twitch
+   * channel / Kick channel / YouTube live chat id / Discord channel id), used
+   * to target engine replies (e.g. !help) back to the right channel. */
+  string channel_id = 7; 
 }
 
 message MessagePreProcess {
