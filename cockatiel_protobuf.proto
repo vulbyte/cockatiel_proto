@@ -541,6 +541,10 @@ message TimelineQuery {
   // are ignored.
   string timeline_id_uuid7 = 1;
 
+  // Correlation id, echoed back on TimelineQueryResult.request_id so a module
+  // can have several queries in flight.
+  string request_id = 9;
+
   // Only events of this category.
   EventCategory event_type = 2;
 
