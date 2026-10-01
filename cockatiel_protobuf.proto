@@ -561,6 +561,10 @@ message TimelineQuery {
   // Only events persisted at or after this unix-millis timestamp.
   int64 since_ms = 6;
 
+  // Only events whose raw_message starts with this prefix (e.g. clip's
+  // "[stream-start] <platform>:" lookup). Empty = any.
+  string raw_prefix = 10;
+
   // Newest-first pagination. 0 = engine default (e.g. 100).
   int32 limit = 7;
   int32 offset = 8;
