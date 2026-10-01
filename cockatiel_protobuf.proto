@@ -706,6 +706,12 @@ enum QueryOp {
   // the common shapes; this op is the generic escape hatch for engine-internal
   // callers. Read-only by construction.
   QUERY_OP_TIMELINE_READ = 80;
+
+  // ── Aggregate statistics (control surface) ─────────────
+  // One-shot timeline aggregates (total messages / users / commands, platform
+  // counts and errors, recent chart buckets). Replaces six raw-SQL stats
+  // queries the TUI used to fire every poll.
+  QUERY_OP_STATS = 81;
 }
 
 // The human who triggered a moderation action, as resolved by the engine
