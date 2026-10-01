@@ -525,6 +525,10 @@ message TimelineEvent {
   string processed_message = 10;
   string user_uuid7 = 11;
   uint32 version = 12; // cannot be negative
+  // The row's pipeline status ("queued" | "processing" | "complete" | "failed"
+  // | "audit"). Not part of the wire stage payloads; carried here so timeline
+  // reads can render/filter on progress (e.g. the held-for-audit queue).
+  string pipeline_status = 13;
 }
 
 // A typed request for timeline events. A module asks for one event (by
@@ -564,6 +568,10 @@ message TimelineQuery {
   // Only events whose raw_message starts with this prefix (e.g. clip's
   // "[stream-start] <platform>:" lookup). Empty = any.
   string raw_prefix = 10;
+
+  // Only events whose pipeline_status matches — e.g. "audit" for the
+  // held-for-audit queue, "failed" for errors. Empty = any.
+  string pipeline_status = 11;
 
   // Newest-first pagination. 0 = engine default (e.g. 100).
   int32 limit = 7;
