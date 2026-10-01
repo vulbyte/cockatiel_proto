@@ -8,7 +8,7 @@
 //! [`cockatiel_protobuf.proto`]: https://github.com/vulbyte/cockatiel_proto/blob/main/cockatiel_protobuf.proto
 
 pub mod proto {
-    include!(concat!(env!("OUT_DIR"), "/cockatiel_protobuf.v1.rs"));
+    include!(concat!(env!("OUT_DIR"), "/cockatiel_protobuf.rs"));
 }
 
 use proto::Prompt;
