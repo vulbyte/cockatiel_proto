@@ -1140,6 +1140,24 @@ message ChannelStats {
 // exactly one payload travels per container. Anything not in the oneof cannot
 // be expressed on the wire and MUST be rejected by the receiver.
 
+// TUI-INTERNAL: parent TUI -> detached child window. The parent TUI's shared
+// render snapshot and deltas, so every window of a view type (embedded pane or
+// detached pop-out) shows the same data. The engine and non-TUI modules never
+// send or interpret this; it just rides the same container so the child can
+// reuse the engine handshake. `payload` is serde_json of the `kind`'s data.
+message TuiSync {
+  string kind = 1;    // "snapshot" | "stats" | "log" | "prompt" | "connection"
+  bytes payload = 2;  // serde_json
+}
+
+// TUI-INTERNAL: detached child window -> parent TUI. A UI action the child
+// forwards for the parent to apply on its behalf (the parent owns the engine,
+// the supervisor and the shared state). Never sent by the engine.
+message TuiRequest {
+  string kind = 1;    // "action" | "query"
+  bytes payload = 2;  // serde_json
+}
+
 message ContainerForModule {
   // Every payload here travels ENGINE -> MODULE.
   int32 version = 1;                  // protocol family: MUST be 2
@@ -1172,6 +1190,7 @@ message ContainerForModule {
     PredictionUpdate prediction_update = 37; // live prediction bar state
     PollUpdate poll_update = 38;               // live free-vote poll state
     ChannelStats channel_stats = 39;           // pushed viewer/member counts
+    TuiSync tui_sync = 40;             // TUI-internal: parent TUI -> detached child (shared snapshot/deltas)
   }
   // Tag 2 was never used in v1. `connection_request` (7) is engine-INBOUND only,
   // `command` (11) is invoked by a module, and 22/23/25/29/30/31/32/33 are
@@ -1212,6 +1231,7 @@ message ContainerForEngine {
     MessagePreProcess message_pre_process = 13;   // STAGE 1 echo / ack-with-result
     MessageInProcess message_in_process = 14;     // STAGE 2 echo / ack-with-result
     MessagePostProcess message_post_process = 15; // STAGE 3 echo / ack-with-result
+    TuiRequest tui_request = 40;      // TUI-internal: detached child -> parent TUI (forwarded action)
   }
   // Reserved: `auth_new` (10) is engine-issued; state (16-18) and results
   // (24, 26) are engine -> module only.
