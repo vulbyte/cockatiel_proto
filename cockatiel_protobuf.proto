@@ -1115,6 +1115,21 @@ message PollUpdate {
   bool hide_counts = 8;             // if true, counts are concealed while OPEN
 }
 
+message TimerUpdate {
+  /*
+   * expected behavior:
+   * unauthed: sever the connection immediately
+   * authed: engine: relay to every connected module. module: (brain) send when a
+   *   timer is created or cancelled; (display) render a live countdown from
+   *   `ends_at_ms` until it passes, then show it finished. A new `timer_id`
+   *   replaces the previous timer; `cancelled` clears it.
+   */
+  string timer_id = 1;         // opaque id; a new id replaces the previous timer
+  string label = 2;            // what the timer is for (may be empty)
+  int64 ends_at_ms = 3;        // epoch-ms when it expires (ignored when cancelled)
+  bool cancelled = 4;          // true = clear the active timer
+}
+
 message ChannelStats {
   /*
    * expected behavior:
@@ -1191,6 +1206,7 @@ message ContainerForModule {
     PollUpdate poll_update = 38;               // live free-vote poll state
     ChannelStats channel_stats = 39;           // pushed viewer/member counts
     TuiSync tui_sync = 40;             // TUI-internal: parent TUI -> detached child (shared snapshot/deltas)
+    TimerUpdate timer_update = 41;     // live countdown timer (events window display)
   }
   // Tag 2 was never used in v1. `connection_request` (7) is engine-INBOUND only,
   // `command` (11) is invoked by a module, and 22/23/25/29/30/31/32/33 are
@@ -1232,6 +1248,7 @@ message ContainerForEngine {
     MessageInProcess message_in_process = 14;     // STAGE 2 echo / ack-with-result
     MessagePostProcess message_post_process = 15; // STAGE 3 echo / ack-with-result
     TuiRequest tui_request = 40;      // TUI-internal: detached child -> parent TUI (forwarded action)
+    TimerUpdate timer_update = 41;    // publish/cancel a countdown timer
   }
   // Reserved: `auth_new` (10) is engine-issued; state (16-18) and results
   // (24, 26) are engine -> module only.
