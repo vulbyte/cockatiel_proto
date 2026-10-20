@@ -304,6 +304,29 @@ message SendToPlatforms {
   /* Optional: target a single channel instead of every channel the adapter
    * monitors (used for !help / invalid-command replies). */
   string channel_id = 9;
+
+  /* Optional: post as a proxied identity (the Discord RP "possess" feature)
+   * instead of the adapter's own bot identity. When set, the adapter posts
+   * through a per-(channel, character) webhook whose name/avatar override the
+   * sender, so the message appears to come from that character. */
+  ProxyIdentity proxy = 10;
+
+  /* Optional: after a successful post, delete this platform message id — the
+   * RP trigger message a proxied send replaces. Empty = nothing to delete. */
+  string delete_message_id = 11;
+}
+
+/* A proxied "fake profile" identity: a name + avatar the adapter posts through
+ * a webhook so a message appears to come from a chosen character. */
+message ProxyIdentity {
+  /* Stable id for the (channel, character) webhook the adapter caches. */
+  string character_key = 1;
+  /* The display name to post as (the character's name). */
+  string display_name = 2;
+  /* The character's avatar image bytes. Optional: present when the adapter
+   * should (re)set the webhook's avatar; empty = reuse the cached webhook as-is
+   * (keeps the avatar bytes off the per-message hot path). */
+  bytes avatar = 3;
 }
 
 // ==========================================
