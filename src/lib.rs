@@ -80,4 +80,29 @@ mod proxy_roundtrip_tests {
         assert!(plain.proxy.is_none());
         assert!(plain.delete_message_id.is_empty());
     }
+
+    /// A `StatusNotice` survives encode/decode with its source, level, text and
+    /// ttl intact; an empty text still round-trips (it means "clear").
+    #[test]
+    fn status_notice_round_trips() {
+        use super::proto::StatusNotice;
+        let notice = StatusNotice {
+            source: "youtube".into(),
+            level: "warning".into(),
+            text: "YouTube API quota exhausted; live chat paused".into(),
+            ttl_secs: 0,
+        };
+        let mut buf = Vec::new();
+        notice.encode(&mut buf).unwrap();
+        let back = StatusNotice::decode(buf.as_slice()).unwrap();
+        assert_eq!(back, notice);
+        let clear = StatusNotice {
+            source: "youtube".into(),
+            text: String::new(),
+            ..Default::default()
+        };
+        let mut buf = Vec::new();
+        clear.encode(&mut buf).unwrap();
+        assert_eq!(StatusNotice::decode(buf.as_slice()).unwrap(), clear);
+    }
 }
